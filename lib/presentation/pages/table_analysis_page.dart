@@ -14,7 +14,8 @@ class TableAnalysisPage extends StatefulWidget {
   State<TableAnalysisPage> createState() => _TableAnalysisPageState();
 }
 
-class _TableAnalysisPageState extends State<TableAnalysisPage> {
+class _TableAnalysisPageState extends State<TableAnalysisPage>
+    with SingleTickerProviderStateMixin {
   final AllTablesRemoteDataSource _service = AllTablesRemoteDataSourceImpl(
     client: http.Client(),
   );
@@ -23,11 +24,31 @@ class _TableAnalysisPageState extends State<TableAnalysisPage> {
   DateTime _startDate = DateTime.now().subtract(const Duration(days: 7));
   DateTime _endDate = DateTime.now();
   String _selectedStatistic = 'items';
+  late AnimationController _animationController;
+  late Animation<double> _animation;
 
   @override
   void initState() {
     super.initState();
     _loadData();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
+    _animation = CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeInOut,
+    );
+    // Start animation when data is loaded
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _animationController.forward(from: 0.0);
+    });
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadData() async {
@@ -74,40 +95,88 @@ class _TableAnalysisPageState extends State<TableAnalysisPage> {
     });
   }
 
+  void _onStatisticChanged(String newStatistic) {
+    setState(() {
+      _selectedStatistic = newStatistic;
+    });
+    _animationController.forward(from: 0.0);
+  }
+
+  String _formatNumber(int number) {
+    if (number >= 1000000) {
+      return '${(number / 1000000).toStringAsFixed(1)}м';
+    } else if (number >= 1000) {
+      return '${(number / 1000).toStringAsFixed(1)}к';
+    }
+    return number.toString();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Аналіз відвантажених замовлень'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () {
+              _loadData();
+              _animationController.forward(from: 0.0);
+            },
+          ),
+        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  DateFilterButtons(
-                    startDate: _startDate,
-                    endDate: _endDate,
-                    onDateRangeChanged: _onDateRangeChanged,
-                  ),
-                  const SizedBox(height: 24),
-                  _buildSummaryCard(),
-                  const SizedBox(height: 24),
-                  SizedBox(
-                    height: 300,
-                    child: PieChart(
-                      PieChartData(
-                        sections: _buildPieChartSections(),
-                        sectionsSpace: 2,
-                        centerSpaceRadius: 40,
-                        startDegreeOffset: -90,
+          : RefreshIndicator(
+              onRefresh: () async {
+                await _loadData();
+                _animationController.forward(from: 0.0);
+              },
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    DateFilterButtons(
+                      startDate: _startDate,
+                      endDate: _endDate,
+                      onDateRangeChanged: _onDateRangeChanged,
+                    ),
+                    const SizedBox(height: 24),
+                    _buildSummaryCard(),
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      height: 300,
+                      child: AnimatedBuilder(
+                        animation: _animation,
+                        builder: (context, child) {
+                          return PieChart(
+                            PieChartData(
+                              sections: _buildPieChartSections().map((section) {
+                                return PieChartSectionData(
+                                  color: section.color,
+                                  value: section.value * _animation.value,
+                                  title: section.title,
+                                  radius: section.radius,
+                                  titleStyle: section.titleStyle,
+                                  showTitle: section.showTitle,
+                                  titlePositionPercentageOffset:
+                                      section.titlePositionPercentageOffset,
+                                );
+                              }).toList(),
+                              sectionsSpace: 2,
+                              centerSpaceRadius: 40,
+                              startDegreeOffset: -90,
+                            ),
+                          );
+                        },
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 24),
-                  _buildStatisticsContainers(),
-                ],
+                    const SizedBox(height: 24),
+                    _buildStatisticsContainers(),
+                  ],
+                ),
               ),
             ),
     );
@@ -118,9 +187,11 @@ class _TableAnalysisPageState extends State<TableAnalysisPage> {
     int totalOrders = 0;
     int totalUniqueItems = 0;
     int totalDays = _endDate.difference(_startDate).inDays;
+    int totalQueue = 0;
 
     _data.forEach((factory, analyses) {
       for (var analysis in analyses) {
+        totalQueue += analysis.tables.first.queue;
         for (var table in analysis.tables) {
           totalItems += table.countItems;
           totalOrders += table.countOrder;
@@ -168,6 +239,13 @@ class _TableAnalysisPageState extends State<TableAnalysisPage> {
                 //   Icons.category_outlined,
                 //   'unique',
                 // ),
+                if (_startDate.day == DateTime.now().day)
+                  _buildStatItem(
+                    'Черга',
+                    totalQueue.toString(),
+                    Icons.queue_outlined,
+                    'queue',
+                  ),
                 _buildStatItem(
                   'Днів',
                   (totalDays + 1).toString(),
@@ -185,51 +263,58 @@ class _TableAnalysisPageState extends State<TableAnalysisPage> {
   Widget _buildStatItem(
       String label, String value, IconData icon, String statType) {
     final isSelected = _selectedStatistic == statType;
-    return InkWell(
-      onTap: () {
-        setState(() {
-          _selectedStatistic = statType;
-        });
-      },
-      child: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? Theme.of(context).primaryColor.withOpacity(0.1)
-              : null,
-          borderRadius: BorderRadius.circular(8),
-          border: isSelected
-              ? Border.all(color: Theme.of(context).primaryColor)
-              : null,
-        ),
-        child: Column(
-          children: [
-            Icon(
-              icon,
-              color: isSelected ? Theme.of(context).primaryColor : Colors.grey,
-              size: 24,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: isSelected ? Theme.of(context).primaryColor : null,
-              ),
-            ),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                color: isSelected
-                    ? Theme.of(context).primaryColor
-                    : Colors.grey[600],
-              ),
-            ),
-          ],
-        ),
+    final isDays = statType == 'days';
+
+    final container = Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: isSelected && !isDays
+            ? Theme.of(context).primaryColor.withOpacity(0.1)
+            : null,
+        borderRadius: BorderRadius.circular(8),
+        border: isSelected && !isDays
+            ? Border.all(color: Theme.of(context).primaryColor)
+            : null,
       ),
+      child: Column(
+        children: [
+          Icon(
+            icon,
+            color: isSelected && !isDays
+                ? Theme.of(context).primaryColor
+                : Colors.grey,
+            size: 24,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color:
+                  isSelected && !isDays ? Theme.of(context).primaryColor : null,
+            ),
+          ),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: isSelected && !isDays
+                  ? Theme.of(context).primaryColor
+                  : Colors.grey[600],
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (isDays) {
+      return container;
+    }
+
+    return InkWell(
+      onTap: () => _onStatisticChanged(statType),
+      child: container,
     );
   }
 
@@ -245,18 +330,27 @@ class _TableAnalysisPageState extends State<TableAnalysisPage> {
     _data.forEach((factory, data) {
       int total = 0;
       for (var analysis in data) {
-        for (var table in analysis.tables) {
-          switch (_selectedStatistic) {
-            case 'items':
+        switch (_selectedStatistic) {
+          case 'items':
+            for (var table in analysis.tables) {
               total += table.countItems;
-              break;
-            case 'orders':
+            }
+            break;
+          case 'orders':
+            for (var table in analysis.tables) {
               total += table.countOrder;
-              break;
-            case 'unique':
+            }
+            break;
+          case 'unique':
+            for (var table in analysis.tables) {
               total += table.countUItems;
-              break;
-          }
+            }
+            break;
+          case 'queue':
+            if (analysis.tables.isNotEmpty) {
+              total += analysis.tables.first.queue;
+            }
+            break;
         }
       }
       totalAll += total;
@@ -265,18 +359,27 @@ class _TableAnalysisPageState extends State<TableAnalysisPage> {
     _data.forEach((factory, data) {
       int total = 0;
       for (var analysis in data) {
-        for (var table in analysis.tables) {
-          switch (_selectedStatistic) {
-            case 'items':
+        switch (_selectedStatistic) {
+          case 'items':
+            for (var table in analysis.tables) {
               total += table.countItems;
-              break;
-            case 'orders':
+            }
+            break;
+          case 'orders':
+            for (var table in analysis.tables) {
               total += table.countOrder;
-              break;
-            case 'unique':
+            }
+            break;
+          case 'unique':
+            for (var table in analysis.tables) {
               total += table.countUItems;
-              break;
-          }
+            }
+            break;
+          case 'queue':
+            if (analysis.tables.isNotEmpty) {
+              total += analysis.tables.first.queue;
+            }
+            break;
         }
       }
 
@@ -287,7 +390,7 @@ class _TableAnalysisPageState extends State<TableAnalysisPage> {
         PieChartSectionData(
           color: colors[sections.length % colors.length],
           value: total.toDouble(),
-          title: '$factory\n$percentage%',
+          title: '$factory\n$percentage%\n(${_formatNumber(total)})',
           radius: 100,
           titleStyle: const TextStyle(
             fontSize: 16,
@@ -379,6 +482,11 @@ class _TableAnalysisPageState extends State<TableAnalysisPage> {
                     'Кількість днів: ${entry.value.length}',
                     style: const TextStyle(fontSize: 14),
                   ),
+                  if (_startDate.day == DateTime.now().day)
+                    Text(
+                      'Кількість в черзі: ${entry.value.first.tables.first.queue}',
+                      style: const TextStyle(fontSize: 14),
+                    ),
                 ],
               ),
             ),
