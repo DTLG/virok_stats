@@ -30,12 +30,14 @@ class TableData {
   final int countItems;
   final int countOrder;
   final int countUItems;
+  final int queue;
 
   TableData({
     required this.name,
     required this.countItems,
     required this.countOrder,
     required this.countUItems,
+    required this.queue,
   });
 
   factory TableData.fromJson(String name, Map<String, dynamic> json) {
@@ -44,6 +46,7 @@ class TableData {
       countItems: json['count_items'] ?? 0,
       countOrder: json['count_order'] ?? 0,
       countUItems: json['count_u_items'] ?? 0,
+      queue: json['queue'] ?? 0,
     );
   }
 }

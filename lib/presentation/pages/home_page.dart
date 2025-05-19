@@ -6,6 +6,7 @@ import 'home/widgets/home_title.dart';
 // import 'all_failures_page.dart';
 // import 'deformat_page.dart';
 import 'table_analysis_page.dart';
+import 'settings_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -90,6 +91,12 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               text: 'Аналіз замовлень',
               onPressed: () =>
                   _navigateToPage(context, const TableAnalysisPage()),
+            ),
+            const SizedBox(height: 20),
+            SettingsButton(
+              text: 'Налаштування',
+              onPressed: () => _navigateToPage(context, const SettingsPage()),
+              // onPressed: () => () {},
             ),
           ],
         ),

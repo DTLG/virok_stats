@@ -80,6 +80,15 @@ class TableDetailsPage extends StatelessWidget {
     );
   }
 
+  String _formatNumber(int number) {
+    if (number >= 1000000) {
+      return '${(number / 1000000).toStringAsFixed(1)}м';
+    } else if (number >= 1000) {
+      return '${(number / 1000).toStringAsFixed(1)}к';
+    }
+    return number.toString();
+  }
+
   Widget _buildStatItem(String label, int value) {
     return Column(
       children: [
