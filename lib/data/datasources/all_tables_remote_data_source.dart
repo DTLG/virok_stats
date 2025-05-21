@@ -16,7 +16,7 @@ class AllTablesRemoteDataSourceImpl implements AllTablesRemoteDataSource {
   @override
   Future<Map<String, List<TableAnalysis>>> getAllTables() async {
     try {
-      final response = await client.get(Uri.parse('$baseUrl/.json'));
+      final response = await client.get(Uri.parse('$baseUrl/wms_stats/.json'));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body) as Map<String, dynamic>;

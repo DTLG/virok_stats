@@ -7,160 +7,154 @@ import 'home/widgets/home_title.dart';
 // import 'deformat_page.dart';
 import 'table_analysis_page.dart';
 import 'settings_page.dart';
+import 'order_analysis_page.dart';
+import 'order_reserve_page.dart';
 
-class HomePage extends StatefulWidget {
+class HomePage extends StatelessWidget {
   const HomePage({Key? key}) : super(key: key);
-
-  @override
-  State<HomePage> createState() => _HomePageState();
-}
-
-class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
-  late final AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 6),
-    );
-    _controller.addStatusListener((status) {
-      if (status == AnimationStatus.completed) {
-        _controller.forward(from: 0.0);
-      }
-    });
-    _controller.forward();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-        child: OrientationBuilder(builder: (context, orientation) {
-          if (orientation == Orientation.portrait) {
-            return _buildPortraitLayout(context);
-          } else {
-            return _buildLandscapeLayout(context);
-          }
-        }),
+      body: Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          // gradient: LinearGradient(
+          //   begin: Alignment.topLeft,
+          //   end: Alignment.bottomRight,
+          //   colors: [
+          //     Theme.of(context).primaryColor.withOpacity(0.1),
+          //     Colors.red,
+          //   ],
+          // ),
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'VIROK REPORT',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 18),
+                // Text(
+                //   'Система управління складом',
+                //   style: TextStyle(
+                //     fontSize: 16,
+                //     color: Colors.grey[600],
+                //   ),
+                // ),
+                const SizedBox(height: 32),
+                Expanded(
+                  child: GridView.count(
+                    crossAxisCount: 2,
+                    mainAxisSpacing: 16,
+                    crossAxisSpacing: 16,
+                    childAspectRatio: 1.2,
+                    children: [
+                      _buildMenuCard(
+                        context: context,
+                        title: 'Відвантажені замовлення',
+                        icon: Icons.analytics_outlined,
+                        // color: Colors.blue,
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const TableAnalysisPage(),
+                          ),
+                        ),
+                      ),
+                      _buildMenuCard(
+                        context: context,
+                        title: 'Товари',
+                        icon: Icons.inventory_2_outlined,
+                        // color: Colors.green,
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const OrderAnalysisPage(),
+                          ),
+                        ),
+                      ),
+                      _buildMenuCard(
+                        context: context,
+                        title: 'Резерви',
+                        icon: Icons.lock_outline,
+                        // color: Colors.orange,
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const OrderReservePage(),
+                          ),
+                        ),
+                      ),
+                      // Add more menu cards here as needed
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildPortraitLayout(BuildContext context) {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(top: 60.0),
-          child: Lottie.asset(
-            'assets/lottiefiles/main_screen.json',
-            controller: _controller,
-            repeat: true,
+  Widget _buildMenuCard({
+    required BuildContext context,
+    required String title,
+    required IconData icon,
+    Color color = Colors.red,
+    required VoidCallback onTap,
+  }) {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                color.withOpacity(0.1),
+                color.withOpacity(0.05),
+              ],
+            ),
           ),
-        ),
-        const HomeTitle(title: 'Virok-KPI'),
-        const Spacer(),
-        Column(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            // HomeButton(
-            //   text: 'Аналіз простоїв',
-            //   onPressed: () =>
-            //       _navigateToPage(context, const FailureChartPage()),
-            // ),
-            // const SizedBox(height: 20),
-            // HomeButton(
-            //   text: 'Всі простої',
-            //   onPressed: () =>
-            //       _navigateToPage(context, AllFailuresPage.allFailures()),
-            // ),
-            // const SizedBox(height: 20),
-            // HomeButton(
-            //   text: 'Деформат',
-            //   onPressed: () => _navigateToPage(context, const DeformatPage()),
-            // ),
-            // const SizedBox(height: 20),
-            HomeButton(
-              text: 'Аналіз замовлень',
-              onPressed: () =>
-                  _navigateToPage(context, const TableAnalysisPage()),
-            ),
-            const SizedBox(height: 20),
-            SettingsButton(
-              text: 'Налаштування',
-              onPressed: () => _navigateToPage(context, const SettingsPage()),
-              // onPressed: () => () {},
-            ),
-          ],
-        ),
-        const Spacer(),
-      ],
-    );
-  }
-
-  Widget _buildLandscapeLayout(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: [
-            const Padding(
-              padding: EdgeInsets.only(top: 60.0),
-              child: HomeTitle(title: 'Virok-KPI'),
-            ),
-            Expanded(
-              child: Center(
-                child: Lottie.asset(
-                  'assets/lottiefiles/main_screen.json',
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                size: 32,
+                color: color,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: color.withOpacity(0.8),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-        const SizedBox(width: 40),
-        Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // HomeButton(
-            //   text: 'Аналіз простоїв',
-            //   onPressed: () =>
-            //       _navigateToPage(context, const FailureChartPage()),
-            // ),
-            // const SizedBox(height: 20),
-            // HomeButton(
-            //   text: 'Всі простої',
-            //   onPressed: () =>
-            //       _navigateToPage(context, AllFailuresPage.allFailures()),
-            // ),
-            // const SizedBox(height: 20),
-            // HomeButton(
-            //   text: 'Деформат',
-            //   onPressed: () => _navigateToPage(context, const DeformatPage()),
-            // ),
-            // const SizedBox(height: 20),
-            HomeButton(
-              text: 'Аналіз замовлень',
-              onPressed: () =>
-                  _navigateToPage(context, const TableAnalysisPage()),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  void _navigateToPage(BuildContext context, Widget page) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => page),
+      ),
     );
   }
 }
