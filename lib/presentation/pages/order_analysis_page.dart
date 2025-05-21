@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import '../../domain/models/order_analysis.dart';
 import '../../data/datasources/order_analysis_remote_data_source.dart';
 import '../widgets/date_filter_buttons.dart';
+import '../pages/order_analysis_details_page.dart';
 
 class OrderAnalysisPage extends StatefulWidget {
   const OrderAnalysisPage({Key? key}) : super(key: key);
@@ -415,52 +416,65 @@ class _OrderAnalysisPageState extends State<OrderAnalysisPage>
 
         return Padding(
           padding: const EdgeInsets.only(bottom: 12),
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: colors[
-                  _data.keys.toList().indexOf(entry.key) % colors.length],
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: colors[
-                        _data.keys.toList().indexOf(entry.key) % colors.length]
-                    .withOpacity(0.5),
-                width: 2,
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  entry.key,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+          child: InkWell(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => OrderAnalysisDetailsPage(
+                    factoryName: entry.key,
+                    factoryData: entry.value,
                   ),
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  'Всього товарів: ${totalCount.toStringAsFixed(0)}',
-                  style: const TextStyle(fontSize: 14),
+              );
+            },
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: colors[
+                    _data.keys.toList().indexOf(entry.key) % colors.length],
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: colors[_data.keys.toList().indexOf(entry.key) %
+                          colors.length]
+                      .withOpacity(0.5),
+                  width: 2,
                 ),
-                Text(
-                  'На складі: ${totalAmountStorage.toStringAsFixed(0)}',
-                  style: const TextStyle(fontSize: 14),
-                ),
-                Text(
-                  'В резерві: ${totalReserv.toStringAsFixed(0)}',
-                  style: const TextStyle(fontSize: 14),
-                ),
-                Text(
-                  'Загальна сума: ₴${totalSumPrice.toStringAsFixed(2)}',
-                  style: const TextStyle(fontSize: 14),
-                ),
-                Text(
-                  'Кількість днів: ${entry.value.length}',
-                  style: const TextStyle(fontSize: 14),
-                ),
-              ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    entry.key,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Всього товарів: ${totalCount.toStringAsFixed(0)}',
+                    style: const TextStyle(fontSize: 14),
+                  ),
+                  Text(
+                    'На складі: ${totalAmountStorage.toStringAsFixed(0)}',
+                    style: const TextStyle(fontSize: 14),
+                  ),
+                  Text(
+                    'В резерві: ${totalReserv.toStringAsFixed(0)}',
+                    style: const TextStyle(fontSize: 14),
+                  ),
+                  Text(
+                    'Загальна сума: ₴${totalSumPrice.toStringAsFixed(2)}',
+                    style: const TextStyle(fontSize: 14),
+                  ),
+                  Text(
+                    'Кількість днів: ${entry.value.length}',
+                    style: const TextStyle(fontSize: 14),
+                  ),
+                ],
+              ),
             ),
           ),
         );
