@@ -113,7 +113,7 @@ class _OrderAnalysisPageState extends State<OrderAnalysisPage>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Аналіз за товарами'),
+        title: const Text('Коригування'),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),

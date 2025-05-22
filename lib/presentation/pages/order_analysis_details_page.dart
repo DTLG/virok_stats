@@ -68,11 +68,11 @@ class _OrderAnalysisDetailsPageState extends State<OrderAnalysisDetailsPage>
         title: Text(widget.factoryName),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildSummaryCard(),
+            // _buildSummaryCard(),
             // const SizedBox(height: 24),
             // SizedBox(
             //   height: 300,
@@ -101,7 +101,7 @@ class _OrderAnalysisDetailsPageState extends State<OrderAnalysisDetailsPage>
             //     },
             //   ),
             // ),
-            const SizedBox(height: 24),
+            // const SizedBox(height: 24),
             _buildDetailedList(),
           ],
         ),
@@ -281,45 +281,157 @@ class _OrderAnalysisDetailsPageState extends State<OrderAnalysisDetailsPage>
   }
 
   Widget _buildDetailedList() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: widget.factoryData.entries.map((dateEntry) {
-        return Card(
-          margin: const EdgeInsets.only(bottom: 16),
-          child: Theme(
-            data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-            child: ExpansionTile(
-              title: Text(
-                dateEntry.key,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
+    // Збираємо всі товари в один список
+    final List<_OrderRow> rows = [];
+    double totalCount = 0;
+    double totalSum = 0;
+
+    widget.factoryData.forEach((date, orders) {
+      orders.forEach((orderId, order) {
+        rows.add(_OrderRow(
+          name: order.name,
+          article: orderId,
+          storage: order.amountStorage,
+          count: order.count,
+          sum: order.sumPrice,
+        ));
+        totalCount += order.count;
+        totalSum += order.sumPrice;
+      });
+    });
+
+    return Card(
+      // elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Table(
+          columnWidths: const {
+            0: FixedColumnWidth(140), // Номенклатура
+            1: FixedColumnWidth(90), // Артикул
+            2: FixedColumnWidth(90), // Залишок
+            3: FixedColumnWidth(70), // Кількість
+            4: FixedColumnWidth(110), // Сума
+          },
+          border: TableBorder.symmetric(
+            inside: const BorderSide(width: 0.5, color: Colors.black12),
+            outside: const BorderSide(width: 1, color: Colors.black26),
+          ),
+          defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+          children: [
+            // Header
+            TableRow(
+              decoration: BoxDecoration(color: Colors.yellow[100]),
+              children: const [
+                Padding(
+                  padding: EdgeInsets.all(8),
+                  child: Text('Номенклатура',
+                      style: TextStyle(fontWeight: FontWeight.bold)),
                 ),
-              ),
-              children: dateEntry.value.entries.map((orderEntry) {
-                final order = orderEntry.value;
-                return Column(
+                Padding(
+                  padding: EdgeInsets.all(8),
+                  child: Text('Артикул',
+                      style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+                Padding(
+                  padding: EdgeInsets.all(8),
+                  child: Text('Залишок на складі',
+                      style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+                Padding(
+                  padding: EdgeInsets.all(8),
+                  child: Text('Кількість',
+                      style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+                Padding(
+                  padding: EdgeInsets.all(8),
+                  child: Text('Сума коригувань',
+                      style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+              ],
+            ),
+            // Data rows
+            ...rows.map((row) => TableRow(
                   children: [
-                    ListTile(
-                      title: Text(order.name),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Кількість: ${order.count.toStringAsFixed(0)}'),
-                          Text(
-                              'На складі: ${order.amountStorage.toStringAsFixed(0)}'),
-                          Text('В резерві: ${order.reserv.toStringAsFixed(0)}'),
-                          Text('Сума: ₴${order.sumPrice.toStringAsFixed(2)}'),
-                        ],
+                    Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Text(
+                        row.name,
+                        maxLines: null,
+                        softWrap: true,
                       ),
                     ),
-                    const Divider(height: 1, indent: 16, endIndent: 16),
+                    Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Text(row.article),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Text(row.storage.toStringAsFixed(0)),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Text(row.count > 0
+                          ? '-${row.count.toStringAsFixed(0)}'
+                          : row.count.toStringAsFixed(0)),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Text(row.sum > 0
+                          ? '-${row.sum.toStringAsFixed(2)}'
+                          : row.sum.toStringAsFixed(2)),
+                    ),
                   ],
-                );
-              }).toList(),
+                )),
+            // Total row
+            TableRow(
+              decoration: BoxDecoration(color: Colors.yellow[100]),
+              children: [
+                const Padding(
+                  padding: EdgeInsets.all(8),
+                  child: Text('Разом',
+                      style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+                const Padding(padding: EdgeInsets.all(8), child: Text('')),
+                const Padding(padding: EdgeInsets.all(8), child: Text('')),
+                Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Text(
+                    totalCount > 0
+                        ? '-${totalCount.toStringAsFixed(0)}'
+                        : totalCount.toStringAsFixed(0),
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Text(
+                    totalSum > 0
+                        ? '-${totalSum.toStringAsFixed(2)}'
+                        : totalSum.toStringAsFixed(2),
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
             ),
-          ),
-        );
-      }).toList(),
+          ],
+        ),
+      ),
     );
   }
+}
+
+// Допоміжний клас для зручності
+class _OrderRow {
+  final String name;
+  final String article;
+  final double storage;
+  final double count;
+  final double sum;
+  _OrderRow(
+      {required this.name,
+      required this.article,
+      required this.storage,
+      required this.count,
+      required this.sum});
 }

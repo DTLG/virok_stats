@@ -71,7 +71,7 @@ class HomePage extends StatelessWidget {
                       ),
                       _buildMenuCard(
                         context: context,
-                        title: 'Товари',
+                        title: 'Коригування',
                         icon: Icons.inventory_2_outlined,
                         // color: Colors.green,
                         onTap: () => Navigator.push(
