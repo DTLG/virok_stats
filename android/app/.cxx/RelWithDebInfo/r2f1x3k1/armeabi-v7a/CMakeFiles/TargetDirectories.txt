@@ -1,0 +1,2 @@
+D:/flutter_proj/flutter_proj/virok_kpi/android/app/.cxx/RelWithDebInfo/r2f1x3k1/armeabi-v7a/CMakeFiles/edit_cache.dir
+D:/flutter_proj/flutter_proj/virok_kpi/android/app/.cxx/RelWithDebInfo/r2f1x3k1/armeabi-v7a/CMakeFiles/rebuild_cache.dir

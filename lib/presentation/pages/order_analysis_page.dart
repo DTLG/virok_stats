@@ -240,7 +240,7 @@ class _OrderAnalysisPageState extends State<OrderAnalysisPage>
                 _buildStatItem(
                   'Сума',
                   '₴${totalSumPrice.toStringAsFixed(2)}',
-                  Icons.attach_money,
+                  null,
                   'price',
                 ),
                 // _buildStatItem(
@@ -258,7 +258,7 @@ class _OrderAnalysisPageState extends State<OrderAnalysisPage>
   }
 
   Widget _buildStatItem(
-      String label, String value, IconData icon, String statType) {
+      String label, String value, IconData? icon, String statType) {
     final isSelected = _selectedStatistic == statType;
     final isDays = statType == 'days';
 
@@ -275,13 +275,24 @@ class _OrderAnalysisPageState extends State<OrderAnalysisPage>
       ),
       child: Column(
         children: [
-          Icon(
-            icon,
-            color: isSelected && !isDays
-                ? Theme.of(context).primaryColor
-                : Colors.grey,
-            size: 24,
-          ),
+          icon != null
+              ? Icon(
+                  icon,
+                  color: isSelected && !isDays
+                      ? Theme.of(context).primaryColor
+                      : Colors.grey,
+                  size: 24,
+                )
+              : Text(
+                  '₴',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: isSelected && !isDays
+                        ? Theme.of(context).primaryColor
+                        : Colors.grey,
+                  ),
+                ),
           const SizedBox(height: 8),
           Text(
             value,
