@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import '../../domain/models/order_reserve.dart';
 
 abstract class OrderReserveRemoteDataSource {
-  Future<Map<String, Map<String, OrderReserve>>> getOrderReserve();
+  Future<Map<String, OrderReserve>> getOrderReserve();
 }
 
 class OrderReserveRemoteDataSourceImpl implements OrderReserveRemoteDataSource {
@@ -14,18 +14,16 @@ class OrderReserveRemoteDataSourceImpl implements OrderReserveRemoteDataSource {
   OrderReserveRemoteDataSourceImpl({required this.client});
 
   @override
-  Future<Map<String, Map<String, OrderReserve>>> getOrderReserve() async {
+  Future<Map<String, OrderReserve>> getOrderReserve() async {
     final response = await client.get(Uri.parse('$baseUrl/order_reserve.json'));
 
     if (response.statusCode == 200) {
       final Map<String, dynamic> jsonData = json.decode(response.body);
-      final Map<String, Map<String, OrderReserve>> result = {};
+      final Map<String, OrderReserve> result = {};
 
-      jsonData.forEach((factory, dates) {
-        result[factory] = {};
-        (dates as Map<String, dynamic>).forEach((date, reserveData) {
-          result[factory]![date] = OrderReserve.fromJson(reserveData);
-        });
+      jsonData.forEach((factory, reserveData) {
+        result[factory] =
+            OrderReserve.fromJson(reserveData as Map<String, dynamic>);
       });
 
       return result;

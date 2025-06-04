@@ -5,6 +5,7 @@ import '../../domain/models/order_analysis.dart';
 import '../../data/datasources/order_analysis_remote_data_source.dart';
 import '../widgets/date_filter_buttons.dart';
 import '../pages/order_analysis_details_page.dart';
+import 'package:intl/intl.dart';
 
 class OrderAnalysisPage extends StatefulWidget {
   const OrderAnalysisPage({Key? key}) : super(key: key);
@@ -26,6 +27,7 @@ class _OrderAnalysisPageState extends State<OrderAnalysisPage>
   String _selectedStatistic = 'count';
   late AnimationController _animationController;
   late Animation<double> _animation;
+  final oCcy = new NumberFormat("#,##0.00");
 
   @override
   void initState() {
@@ -100,7 +102,7 @@ class _OrderAnalysisPageState extends State<OrderAnalysisPage>
     _animationController.forward(from: 0.0);
   }
 
-  String _formatNumber(double number) {
+  String formatNumber(double number) {
     if (number >= 1000000) {
       return '${(number / 1000000).toStringAsFixed(1)}м';
     } else if (number >= 1000) {
@@ -239,7 +241,7 @@ class _OrderAnalysisPageState extends State<OrderAnalysisPage>
                 ),
                 _buildStatItem(
                   'Сума',
-                  '₴${totalSumPrice.toStringAsFixed(2)}',
+                  '₴${formatNumber(totalSumPrice)}',
                   null,
                   'price',
                 ),
@@ -386,7 +388,7 @@ class _OrderAnalysisPageState extends State<OrderAnalysisPage>
         PieChartSectionData(
           color: colors[sections.length % colors.length],
           value: total,
-          title: '$factory\n$percentage%\n(${_formatNumber(total)})',
+          title: '$factory\n$percentage%\n(${formatNumber(total)})',
           radius: 100,
           titleStyle: const TextStyle(
             fontSize: 16,
@@ -477,7 +479,8 @@ class _OrderAnalysisPageState extends State<OrderAnalysisPage>
                     style: const TextStyle(fontSize: 14),
                   ),
                   Text(
-                    'Загальна сума: ₴${totalSumPrice.toStringAsFixed(2)}',
+                    'Загальна сума: ₴ ${oCcy.format(totalSumPrice)}',
+                    // 'Загальна сума: ₴${totalSumPrice.toStringAsFixed(2)}',
                     style: const TextStyle(fontSize: 14),
                   ),
                   Text(

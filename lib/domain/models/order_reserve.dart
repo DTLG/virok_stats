@@ -13,4 +13,11 @@ class OrderReserve {
       reservCount: json['reserv_count'] ?? 0,
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'delay_count': delayCount,
+      'reserv_count': reservCount,
+    };
+  }
 }

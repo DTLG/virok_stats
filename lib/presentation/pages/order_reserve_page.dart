@@ -3,7 +3,6 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:http/http.dart' as http;
 import '../../domain/models/order_reserve.dart';
 import '../../data/datasources/order_reserve_remote_data_source.dart';
-import '../widgets/date_filter_buttons.dart';
 
 class OrderReservePage extends StatefulWidget {
   const OrderReservePage({Key? key}) : super(key: key);
@@ -18,10 +17,8 @@ class _OrderReservePageState extends State<OrderReservePage>
       OrderReserveRemoteDataSourceImpl(
     client: http.Client(),
   );
-  Map<String, Map<String, OrderReserve>> _data = {};
+  Map<String, OrderReserve>? _data;
   bool _isLoading = true;
-  DateTime _startDate = DateTime.now().subtract(const Duration(days: 7));
-  DateTime _endDate = DateTime.now();
   String _selectedStatistic = 'delay';
   late AnimationController _animationController;
   late Animation<double> _animation;
@@ -30,7 +27,6 @@ class _OrderReservePageState extends State<OrderReservePage>
   void initState() {
     super.initState();
     _loadData();
-    _onDateRangeChanged(DateTime.now(), DateTime.now());
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 500),
@@ -55,7 +51,7 @@ class _OrderReservePageState extends State<OrderReservePage>
     try {
       final data = await _service.getOrderReserve();
       setState(() {
-        _data = _filterDataByDateRange(data);
+        _data = data;
         _isLoading = false;
       });
     } catch (e) {
@@ -64,33 +60,6 @@ class _OrderReservePageState extends State<OrderReservePage>
         SnackBar(content: Text('Error loading data: $e')),
       );
     }
-  }
-
-  Map<String, Map<String, OrderReserve>> _filterDataByDateRange(
-      Map<String, Map<String, OrderReserve>> data) {
-    final filteredData = <String, Map<String, OrderReserve>>{};
-    final startDate = _startDate.subtract(const Duration(days: 1));
-    final endDate = _endDate;
-
-    data.forEach((factory, dates) {
-      filteredData[factory] = {};
-      dates.forEach((date, reserve) {
-        final analysisDate = DateTime.parse(date);
-        if (analysisDate.isAfter(startDate) && analysisDate.isBefore(endDate)) {
-          filteredData[factory]![date] = reserve;
-        }
-      });
-    });
-
-    return filteredData;
-  }
-
-  void _onDateRangeChanged(DateTime start, DateTime end) {
-    setState(() {
-      _startDate = start;
-      _endDate = end;
-      _loadData();
-    });
   }
 
   void _onStatisticChanged(String newStatistic) {
@@ -136,12 +105,6 @@ class _OrderReservePageState extends State<OrderReservePage>
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
-                    // DateFilterButtons(
-                    //   startDate: _startDate,
-                    //   endDate: _endDate,
-                    //   onDateRangeChanged: _onDateRangeChanged,
-                    // ),
-                    // const SizedBox(height: 24),
                     _buildSummaryCard(),
                     const SizedBox(height: 24),
                     SizedBox(
@@ -172,7 +135,7 @@ class _OrderReservePageState extends State<OrderReservePage>
                       ),
                     ),
                     const SizedBox(height: 24),
-                    _buildStatisticsContainers(),
+                    _buildFactoryCards(),
                   ],
                 ),
               ),
@@ -181,15 +144,14 @@ class _OrderReservePageState extends State<OrderReservePage>
   }
 
   Widget _buildSummaryCard() {
+    if (_data == null) return const SizedBox.shrink();
+
     int totalDelayCount = 0;
     int totalReservCount = 0;
-    int totalDays = _endDate.difference(_startDate).inDays;
 
-    _data.forEach((factory, dates) {
-      dates.forEach((date, reserve) {
-        totalDelayCount += reserve.delayCount;
-        totalReservCount += reserve.reservCount;
-      });
+    _data!.forEach((factory, reserve) {
+      totalDelayCount += reserve.delayCount;
+      totalReservCount += reserve.reservCount;
     });
 
     return Card(
@@ -225,12 +187,6 @@ class _OrderReservePageState extends State<OrderReservePage>
                   Icons.lock_outline,
                   'reserv',
                 ),
-                // _buildStatItem(
-                //   'Днів',
-                //   (totalDays + 1).toString(),
-                //   Icons.calendar_today_outlined,
-                //   'days',
-                // ),
               ],
             ),
           ],
@@ -242,106 +198,82 @@ class _OrderReservePageState extends State<OrderReservePage>
   Widget _buildStatItem(
       String label, String value, IconData icon, String statType) {
     final isSelected = _selectedStatistic == statType;
-    final isDays = statType == 'days';
-
-    final container = Container(
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: isSelected && !isDays
-            ? Theme.of(context).primaryColor.withOpacity(0.1)
-            : null,
-        borderRadius: BorderRadius.circular(8),
-        border: isSelected && !isDays
-            ? Border.all(color: Theme.of(context).primaryColor)
-            : null,
-      ),
-      child: Column(
-        children: [
-          Icon(
-            icon,
-            color: isSelected && !isDays
-                ? Theme.of(context).primaryColor
-                : Colors.grey,
-            size: 24,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color:
-                  isSelected && !isDays ? Theme.of(context).primaryColor : null,
-            ),
-          ),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              color: isSelected && !isDays
-                  ? Theme.of(context).primaryColor
-                  : Colors.grey[600],
-            ),
-          ),
-        ],
-      ),
-    );
-
-    if (isDays) {
-      return container;
-    }
 
     return InkWell(
       onTap: () => _onStatisticChanged(statType),
-      child: container,
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? Theme.of(context).primaryColor.withOpacity(0.1)
+              : null,
+          borderRadius: BorderRadius.circular(8),
+          border: isSelected
+              ? Border.all(color: Theme.of(context).primaryColor)
+              : null,
+        ),
+        child: Column(
+          children: [
+            Icon(
+              icon,
+              color: isSelected ? Theme.of(context).primaryColor : Colors.grey,
+              size: 24,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: isSelected ? Theme.of(context).primaryColor : null,
+              ),
+            ),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                color: isSelected
+                    ? Theme.of(context).primaryColor
+                    : Colors.grey[600],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
   List<PieChartSectionData> _buildPieChartSections() {
+    if (_data == null) return [];
+
     final List<PieChartSectionData> sections = [];
     final colors = [
       Colors.red,
       Colors.blue,
       Colors.green,
+      Colors.orange,
+      Colors.purple,
     ];
 
     int totalAll = 0;
-    _data.forEach((factory, dates) {
-      int total = 0;
-      dates.forEach((date, reserve) {
-        switch (_selectedStatistic) {
-          case 'delay':
-            total += reserve.delayCount;
-            break;
-          case 'reserv':
-            total += reserve.reservCount;
-            break;
-        }
-      });
-      totalAll += total;
+    _data!.forEach((factory, reserve) {
+      totalAll += _selectedStatistic == 'delay'
+          ? reserve.delayCount
+          : reserve.reservCount;
     });
 
-    _data.forEach((factory, dates) {
-      int total = 0;
-      dates.forEach((date, reserve) {
-        switch (_selectedStatistic) {
-          case 'delay':
-            total += reserve.delayCount;
-            break;
-          case 'reserv':
-            total += reserve.reservCount;
-            break;
-        }
-      });
-
+    _data!.forEach((factory, reserve) {
+      final value = _selectedStatistic == 'delay'
+          ? reserve.delayCount
+          : reserve.reservCount;
       final percentage =
-          totalAll > 0 ? (total / totalAll * 100).toStringAsFixed(1) : '0.0';
+          totalAll > 0 ? (value / totalAll * 100).toStringAsFixed(1) : '0.0';
 
       sections.add(
         PieChartSectionData(
           color: colors[sections.length % colors.length],
-          value: total.toDouble(),
-          title: '$factory\n$percentage%\n(${_formatNumber(total)})',
+          value: value.toDouble(),
+          title: '$factory\n$percentage%\n(${_formatNumber(value)})',
           radius: 100,
           titleStyle: const TextStyle(
             fontSize: 16,
@@ -357,23 +289,19 @@ class _OrderReservePageState extends State<OrderReservePage>
     return sections;
   }
 
-  Widget _buildStatisticsContainers() {
+  Widget _buildFactoryCards() {
+    if (_data == null) return const SizedBox.shrink();
+
     final colors = [
       Colors.red.withOpacity(0.2),
       Colors.blue.withOpacity(0.2),
       Colors.green.withOpacity(0.2),
+      Colors.orange.withOpacity(0.2),
+      Colors.purple.withOpacity(0.2),
     ];
 
     return Column(
-      children: _data.entries.map((entry) {
-        int totalDelayCount = 0;
-        int totalReservCount = 0;
-
-        entry.value.forEach((date, reserve) {
-          totalDelayCount += reserve.delayCount;
-          totalReservCount += reserve.reservCount;
-        });
-
+      children: _data!.entries.map((entry) {
         return Padding(
           padding: const EdgeInsets.only(bottom: 12),
           child: Container(
@@ -381,11 +309,11 @@ class _OrderReservePageState extends State<OrderReservePage>
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: colors[
-                  _data.keys.toList().indexOf(entry.key) % colors.length],
+                  _data!.keys.toList().indexOf(entry.key) % colors.length],
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: colors[
-                        _data.keys.toList().indexOf(entry.key) % colors.length]
+                        _data!.keys.toList().indexOf(entry.key) % colors.length]
                     .withOpacity(0.5),
                 width: 2,
               ),
@@ -402,17 +330,13 @@ class _OrderReservePageState extends State<OrderReservePage>
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Непроведено: $totalDelayCount',
+                  'Непроведено: ${entry.value.delayCount}',
                   style: const TextStyle(fontSize: 14),
                 ),
                 Text(
-                  'Резерв: $totalReservCount',
+                  'Резерв: ${entry.value.reservCount}',
                   style: const TextStyle(fontSize: 14),
                 ),
-                // Text(
-                //   'Кількість днів: ${entry.value.length}',
-                //   style: const TextStyle(fontSize: 14),
-                // ),
               ],
             ),
           ),
