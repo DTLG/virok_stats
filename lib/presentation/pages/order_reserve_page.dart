@@ -30,6 +30,7 @@ class _OrderReservePageState extends State<OrderReservePage>
   void initState() {
     super.initState();
     _loadData();
+    _onDateRangeChanged(DateTime.now(), DateTime.now());
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 500),
@@ -135,12 +136,12 @@ class _OrderReservePageState extends State<OrderReservePage>
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
-                    DateFilterButtons(
-                      startDate: _startDate,
-                      endDate: _endDate,
-                      onDateRangeChanged: _onDateRangeChanged,
-                    ),
-                    const SizedBox(height: 24),
+                    // DateFilterButtons(
+                    //   startDate: _startDate,
+                    //   endDate: _endDate,
+                    //   onDateRangeChanged: _onDateRangeChanged,
+                    // ),
+                    // const SizedBox(height: 24),
                     _buildSummaryCard(),
                     const SizedBox(height: 24),
                     SizedBox(
@@ -213,7 +214,7 @@ class _OrderReservePageState extends State<OrderReservePage>
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 _buildStatItem(
-                  'Затримка',
+                  'Непроведено',
                   totalDelayCount.toString(),
                   Icons.timer_outlined,
                   'delay',
@@ -224,12 +225,12 @@ class _OrderReservePageState extends State<OrderReservePage>
                   Icons.lock_outline,
                   'reserv',
                 ),
-                _buildStatItem(
-                  'Днів',
-                  (totalDays + 1).toString(),
-                  Icons.calendar_today_outlined,
-                  'days',
-                ),
+                // _buildStatItem(
+                //   'Днів',
+                //   (totalDays + 1).toString(),
+                //   Icons.calendar_today_outlined,
+                //   'days',
+                // ),
               ],
             ),
           ],
@@ -401,17 +402,17 @@ class _OrderReservePageState extends State<OrderReservePage>
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Затримка: $totalDelayCount',
+                  'Непроведено: $totalDelayCount',
                   style: const TextStyle(fontSize: 14),
                 ),
                 Text(
                   'Резерв: $totalReservCount',
                   style: const TextStyle(fontSize: 14),
                 ),
-                Text(
-                  'Кількість днів: ${entry.value.length}',
-                  style: const TextStyle(fontSize: 14),
-                ),
+                // Text(
+                //   'Кількість днів: ${entry.value.length}',
+                //   style: const TextStyle(fontSize: 14),
+                // ),
               ],
             ),
           ),
